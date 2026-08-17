@@ -77,7 +77,6 @@
       "package": "com.limajuice.liftlog",
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
-        "com.android.vending.BILLING",
         "android.permission.health.WRITE_WEIGHT",
         "android.permission.health.WRITE_EXERCISE",
         "android.permission.health.WRITE_EXERCISE_ROUTE"

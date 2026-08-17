@@ -2,7 +2,6 @@ import { LiftLog } from '@/gen/proto';
 import { whatsNewEntries, WhatsNewEntry } from '@/models/whats-new';
 import type { RootState } from '@/store';
 import { BackupData, FeedBackupData } from '@/models/backup';
-import type { ExternalImportFormat } from '@/services/csv-import';
 import { WeightUnit } from '@/models/weight';
 import { createAction, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { SQLiteDatabase } from 'expo-sqlite';
@@ -19,7 +18,6 @@ import {
 
 export type { ColorSchemeSeed } from './codecs';
 export type { RemoteBackupSettings, LastBackup };
-export type { ExternalImportFormat };
 
 type PreferenceState = { [K in PrefKey]: PrefValue<K> };
 type SettingsState = PreferenceState & { isHydrated: boolean };
@@ -49,7 +47,6 @@ const settingsSlice = createSlice({
   },
 });
 export const initializeSettingsStateSlice = createAction('initializeSettingsStateSlice');
-export type PlaintextExportFormat = 'CSV' | 'JSON';
 
 export const importData = createAction('importData');
 export const importDataSql = createAction<{ db: SQLiteDatabase }>('importDataSql');
@@ -62,11 +59,6 @@ export type ImportBackupDataPayload = BackupData & {
 export const importBackupData = createAction<ImportBackupDataPayload>('importBackupData');
 export const beginFeedImport = createAction<FeedBackupData>('beginFeedImport');
 export const exportData = createAction<{ includeFeed: boolean }>('exportData');
-
-export const exportPlainText = createAction<{ format: PlaintextExportFormat }>('exportPlainText');
-
-/** Pick a third-party export file and merge history via importBackupData. */
-export const importFromExternal = createAction<{ format: ExternalImportFormat }>('importFromExternal');
 
 export const executeRemoteBackup = createAction<{
   settings?: RemoteBackupSettings;
@@ -93,7 +85,6 @@ export const {
   setBackupReminder,
   setColorSchemeSeed,
   setFirstDayOfWeek,
-  setProToken,
   setPreferredLanguage,
   setNotesExpandedByDefault,
   setKeepScreenAwakeDuringWorkout,

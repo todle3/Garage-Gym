@@ -6,7 +6,6 @@ import { FeedIdentityService } from '@/services/feed-identity-service';
 import { FeedInboxDecryptionService } from '@/services/feed-inbox-decryption-service';
 import { FileExportService } from '@/services/file-export-service';
 import { FilePickerService } from '@/services/file-picker-service';
-import { HubConnectionFactory } from '@/services/hub-connection-factory';
 import { KeyValueStore } from '@/services/key-value-store';
 import { Logger } from '@/services/logger';
 import { NotificationService } from '@/services/notification-service';
@@ -42,8 +41,8 @@ export function createServices(store: Store<RootState>, db: ExpoSQLiteDatabase, 
   const fileExportService = new FileExportService();
   const filePickerService = new FilePickerService();
   const preferenceService = new PreferenceService(keyValueStore);
-  const aiChatService = new AiChatServiceV2(new HubConnectionFactory(), store.getState);
   const tolgee = getTolgee(preferenceService);
+  const aiChatService = new AiChatServiceV2(tolgee);
   const workoutWorkerService = new WorkoutWorker(store.dispatch, store.getState, tolgee);
   const healthExportService: HES = new HealthExportService();
   const databaseMigrationService = new DatabaseMigrationService(

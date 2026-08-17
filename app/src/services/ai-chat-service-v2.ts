@@ -1,123 +1,40 @@
-import { AiChatResponseV2, AiChatResponseV2Json, aiPlanFromJSON } from '@/models/ai-models';
-import { aiPlanMigrations } from '@/models/storage/versions/migrations';
-
-import { HubConnection, HubConnectionState } from '@microsoft/signalr';
-import { AsyncIterableSubject } from 'data-async-iterators';
-import { match, P } from 'ts-pattern';
-import { HubConnectionFactory } from '@/services/hub-connection-factory';
-import { RootState } from '@/store';
-import Purchases from 'react-native-purchases';
-import { selectPreferredWeightUnit } from '@/store/settings';
+import { AiChatResponseV2 } from '@/models/ai-models';
+import { TolgeeInstance, TranslationKey } from '@tolgee/react';
 
 /**
- * AI chat service connecting to the `/ai-chat-v2` hub.
+ * Stand-in AI planner, in place while planning moves onto the user's own API key.
+ *
+ * LiftLog's planner ran on the server: this class opened a SignalR connection to the `/ai-chat-v2` hub,
+ * authenticated with a RevenueCat purchase token, and the backend held the provider key and owned the
+ * prompt. Garage Gym inverts that - the key belongs to the user and the app calls Anthropic or OpenAI
+ * directly - so the hub is unreachable (there is no purchase to authenticate with) and its transport is
+ * gone rather than left half-connected.
+ *
+ * Until the on-device client lands, the chat acknowledges what was asked and says plainly that it can't
+ * act on it yet. The interface is unchanged, so the planner screen and its effects need no edit when the
+ * real implementation replaces this.
  */
 export class AiChatServiceV2 {
-  private connection: HubConnection | undefined;
-  constructor(
-    private hubConnectionFactory: HubConnectionFactory,
-    private getState: () => RootState,
-  ) {}
+  constructor(private tolgee: TolgeeInstance) {}
 
   async *introduce(): AsyncIterableIterator<AiChatResponseV2> {
-    const proToken = this.getState().settings.proToken;
-    const preferredWeightUnit = selectPreferredWeightUnit(this.getState());
-    if (!proToken) {
-      yield {
-        type: 'purchasePro',
-      };
-      return;
-    }
-    const subject = await this.setupResponseListening(proToken);
-    void this.connection
-      ?.invoke(
-        'Introduce',
-        Intl.DateTimeFormat().resolvedOptions().locale,
-        aiPlanMigrations.latestVersion,
-        preferredWeightUnit,
-      )
-      .finally(() => subject.end());
-    yield* subject;
-    this.connection?.off('ReceiveMessage');
+    yield {
+      type: 'messageResponse',
+      message: this.tolgee.t('ai.planning_unavailable.introduction' satisfies TranslationKey),
+    };
   }
 
   async *sendMessage(message: string): AsyncIterableIterator<AiChatResponseV2> {
-    const proToken = this.getState().settings.proToken;
-    if (!proToken) {
-      yield {
-        type: 'purchasePro',
-      };
-      return;
-    }
-    const subject = await this.setupResponseListening(proToken);
-    void this.connection?.invoke('SendMessage', message, aiPlanMigrations.latestVersion).finally(() => subject.end());
-    yield* subject;
-    this.connection?.off('ReceiveMessage');
+    yield {
+      type: 'messageResponse',
+      message: this.tolgee.t('ai.planning_unavailable.acknowledgement' satisfies TranslationKey, {
+        request: message,
+      }),
+    };
   }
 
-  async stopInProgress() {
-    await this.connection?.send('StopInProgress');
-  }
+  /** Nothing is in flight to stop, and there is no server-side conversation to reset. */
+  async stopInProgress() {}
 
-  async restartChat() {
-    if (this.connection && this.connection.state !== HubConnectionState.Connected) {
-      await this.connection.stop().catch(console.error);
-      this.connection = undefined;
-    }
-    if (this.connection?.state === HubConnectionState.Connected) {
-      await this.connection.send('RestartChat');
-    }
-  }
-
-  private async setupResponseListening(proToken: string) {
-    const subject = new AsyncIterableSubject<AiChatResponseV2>();
-    if (!this.connection) {
-      this.connection = this.hubConnectionFactory.create(proToken, '/ai-chat-v2');
-
-      this.connection.onclose((e) => {
-        this.connection = undefined;
-        if (e) {
-          console.error(e);
-        }
-      });
-
-      await this.connection.start().catch(async (e) => {
-        this.connection = undefined;
-        if (e) {
-          console.error(e);
-          await Purchases.syncPurchases().catch(console.error);
-        }
-      });
-    }
-    if (!this.connection) {
-      subject.pushValue({
-        type: 'messageResponse',
-        message: 'Failed to connect to server. Please refresh and try again with a strong internet connection',
-      });
-      subject.end();
-      return subject;
-    }
-    this.connection.on('ReceiveMessage', async (m: AiChatResponseV2Json) => {
-      try {
-        subject.pushValue(
-          match(m)
-            .returnType<AiChatResponseV2>()
-            .with(
-              {
-                type: P.union('messageResponse', 'purchasePro', 'updateRequired'),
-              },
-              (chatMessage) => chatMessage,
-            )
-            .with({ type: 'chatPlan' }, (plan) => ({
-              type: 'chatPlan' as const,
-              plan: aiPlanFromJSON(plan),
-            }))
-            .exhaustive(),
-        );
-      } catch (e) {
-        console.warn('Failed to parse ai response', e);
-      }
-    });
-    return subject;
-  }
+  async restartChat() {}
 }

@@ -44,6 +44,22 @@ subscription. "Log in to your own account" is implemented as: paste an API key f
 `console.anthropic.com` or `platform.openai.com`, and we validate it with a cheap probe request
 before saving.
 
+### The AI planner in the meantime
+
+Removing the paywall necessarily removed the transport with it: the hub authenticated with a RevenueCat
+purchase token, so with no purchase there is nothing to authenticate, and a half-connected SignalR client
+would only fail at runtime. `AiChatServiceV2` is therefore a **placeholder** - it keeps its exact
+interface (the same async iterables the planner screen and its effects already consume) and answers with
+`ai.planning_unavailable.*`: it acknowledges the request and says plainly that it can't act on it yet.
+That mirrors what the original Garage Gym app shipped, and it means Phase 4 swaps the class body without
+touching a screen. `hub-connection-factory.ts` and the `@microsoft/signalr` dependency are gone; the
+device-direct client needs plain HTTPS and SSE.
+
+What else went with the paywall: `react-native-purchases` and `-ui`, the Android `BILLING` permission,
+the `proToken` preference and its `PreferenceService` methods, the `purchasePro` response variant, and
+`ProPrompt`. The `persist: false` routing test that used `proToken` as its example now uses
+`remoteBackupSettings`, so the mechanism stays covered.
+
 ## Nutrition is net-new
 
 LiftLog has no concept of food. Its planner is explicitly told _"DO NOT get sidetracked by
@@ -132,8 +148,9 @@ Each phase is independently shippable and verifiable.
 
 1. ~~**Design system**~~ — **done.** Fixed neon scheme, bundled fonts, display type scale, grid
    background, corner-bracket card, glow helpers. See "The design system" above.
-2. **Cut what's going** — remove RevenueCat, CSV import, and plaintext export, including the pro-token
-   plumbing threaded through the AI service and settings.
+2. ~~**Cut what's going**~~ — **done.** RevenueCat, CSV import, and plaintext export are gone, along with
+   the pro-token plumbing and the SignalR transport it authenticated. See "The AI planner in the
+   meantime" below.
 3. **BYOK plumbing** — provider/key settings screen, secure-store service, key validation, model
    picker for Anthropic and OpenAI.
 4. **On-device AI chat** — port the planner to TypeScript with direct streaming, the workout plan tool,
@@ -145,9 +162,30 @@ Each phase is independently shippable and verifiable.
 8. **Reskin sweep** — remaining screens on both platforms: session, editors, stats, history, feed,
    settings.
 
-## Open items
+## Settled details
 
-- No Supabase project exists for this app yet; one needs creating (it costs money on a paid org, so it
-  needs explicit sign-off).
-- Default model per provider, and whether the model picker is a fixed list or free text.
-- Whether the streak on the home screen counts completed sessions only, or any logged activity.
+**Backend.** The **Task App** Supabase project (`qbewsiyiwdnhctfvftrf`) is the one the original Garage Gym
+app used; Garage Gym continues in it rather than getting a new project.
+
+Its schema is small, and worth knowing before Phase 7 designs on top of it:
+
+| Table                      | Columns                                   | Holds                        |
+| -------------------------- | ----------------------------------------- | ---------------------------- |
+| `garage_gym_completions`   | `user_id`, `day` (date)                   | One row per completed day    |
+| `garage_gym_plan_messages` | `user_id`, `role` (user/assistant), `content` | The Create Plan transcript |
+
+Both carry RLS and a foreign key to `auth.users`. As of writing: 4 users, and for one of them 14
+completions spanning 2026-06-15 to 2026-06-30 plus 12 chat messages.
+
+Note what is **absent**: there is no plan, program, exercise, or meal data. The original app's workouts
+and meals were hardcoded in the client, so the calendar and the Chest A day in the screenshots never
+existed as rows. LiftLog's model is far richer than these two tables can hold, so Phase 7 adds its own
+and treats the legacy pair as an import source - the 14 completion dates seed the streak, the messages
+seed the chat history - not as the target schema.
+
+**Default model.** Anthropic defaults to **Sonnet 5** (`claude-sonnet-5`); Opus 5 is selectable for
+users who want to spend more on planning. OpenAI defaults to its current flagship. The picker is a fixed
+list per provider rather than free text, so a typo can't turn into a silent 404 mid-chat.
+
+**Streak.** Counts **completed sessions only** - the same thing `garage_gym_completions` recorded. A day
+with a logged set but no completion does not extend it.

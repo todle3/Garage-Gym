@@ -31,11 +31,7 @@ export interface AiChatMessageResponse {
   message: string;
 }
 
-export interface AiChatPurchaseProResponse {
-  type: 'purchasePro';
-}
-
-export type AiChatResponse = AiChatMessageResponse | AiChatPlanResponse | AiChatPurchaseProResponse;
+export type AiChatResponse = AiChatMessageResponse | AiChatPlanResponse;
 
 export interface AiPlan {
   name: string;
@@ -80,22 +76,14 @@ export interface AiChatUpdateRequiredResponse {
   requiredVersion: number;
 }
 
-export type AiChatResponseV2 =
-  | AiChatMessageResponse
-  | AiChatPlanResponseV2
-  | AiChatUpdateRequiredResponse
-  | AiChatPurchaseProResponse;
+export type AiChatResponseV2 = AiChatMessageResponse | AiChatPlanResponseV2 | AiChatUpdateRequiredResponse;
 
 /** Wire shape received from the hub for a plan (matches backend `AiChatPlanResponseV2`). */
 export type AiChatPlanResponseV2Json = AnyVersionAiPlanJSON & {
   type: 'chatPlan';
 };
 
-export type AiChatResponseV2Json =
-  | AiChatMessageResponse
-  | AiChatPlanResponseV2Json
-  | AiChatUpdateRequiredResponse
-  | AiChatPurchaseProResponse;
+export type AiChatResponseV2Json = AiChatMessageResponse | AiChatPlanResponseV2Json | AiChatUpdateRequiredResponse;
 
 const emptySessionBlueprint = EmptySession.blueprint.toJSON();
 const emptyWeightedExercise = WeightedExerciseBlueprint.empty().toJSON();

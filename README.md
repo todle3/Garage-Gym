@@ -122,7 +122,6 @@ AI/LLM-assisted contributions are welcome, but issues and feature requests shoul
 - [Plan Files](./docs/PlanFileFormat.md) - Documents the `.liftlogplan` file format, and how to generate plans with an AI for import into the app.
 - [Feed Process](./docs/FeedProcess.md) - Documents how the feed and sharing works, especially around e2e encryption.
 - [Remote Backup](./docs/RemoteBackup.md) - Documents how to connect LiftLog to a remote backup server.
-- [Plaintext Export](./docs/PlaintextExport.md) - Documents how to export your data as plaintext.
 - [Workout Worker](./docs/WorkoutWorker.md) - Documents the WorkoutWorker, an event based bridge between native and JS which powers the Android persistent notifications.
 - [Storage Migrations](./docs/Migrations.md) - Documents how on-device data is versioned and migrated, and what to do when changing a stored model.
 

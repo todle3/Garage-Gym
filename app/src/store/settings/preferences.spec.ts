@@ -6,7 +6,12 @@ vi.mock('react-native-purchases', () => ({
 
 import { createAddEffectTestBed } from '@/utils/__test__/add-effect-testbed';
 import { applySettingsEffects } from '@/store/settings/effects';
-import { setColorSchemeSeed, setExportToHealthAggregator, setProToken, settingsReducer } from '@/store/settings';
+import {
+  setColorSchemeSeed,
+  setExportToHealthAggregator,
+  setRemoteBackupSettings,
+  settingsReducer,
+} from '@/store/settings';
 
 describe('settings slice - generated preference actions', () => {
   it('applies a generated setter through the matcher reducer', () => {
@@ -29,7 +34,7 @@ describe('settings slice - generated preference actions', () => {
 function makeTestBed(isHydrated: boolean, extraServices?: Record<string, unknown>) {
   const preferenceService = {
     setPreference: vi.fn(() => Promise.resolve()),
-    setProToken: vi.fn(() => Promise.resolve()),
+    setRemoteBackupSettings: vi.fn(() => Promise.resolve()),
   };
   const testBed = createAddEffectTestBed({
     initialState: { settings: { isHydrated } },
@@ -54,8 +59,9 @@ describe('settings effects - generic persistence', () => {
 
   it('routes a persist:false key through its bespoke effect, not the generic one', async () => {
     const { testBed, preferenceService } = makeTestBed(true);
-    await testBed.dispatchHandled(setProToken('tok'));
-    expect(preferenceService.setProToken).toHaveBeenCalledWith('tok');
+    const settings = { endpoint: 'https://example.test', apiKey: 'key', includeFeedAccount: false };
+    await testBed.dispatchHandled(setRemoteBackupSettings(settings));
+    expect(preferenceService.setRemoteBackupSettings).toHaveBeenCalledWith(settings);
     expect(preferenceService.setPreference).not.toHaveBeenCalled();
   });
 });

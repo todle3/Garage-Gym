@@ -5,6 +5,9 @@ work to find the docs relevant to your area, and update it whenever you add, rem
 
 ## Architecture and patterns
 
+- [GarageGym.md](./GarageGym.md) - the fork spec: what Garage Gym changes about LiftLog (neon reskin,
+  device-direct bring-your-own-key AI chat, meal suggestions, Supabase sync), the decisions behind it,
+  and the phased roadmap. Read this first for any Garage Gym work.
 - [Storage.md](./Storage.md) - the two on-device storage layers: preferences (`PreferenceService`, one
   file per key) and user data (SQLite via Drizzle). Both are injected into Redux effects via `extra`.
   Covers which to use, how to add to each, and the startup hydration order.

@@ -94,7 +94,11 @@ export default function ExerciseNotesDisplay(props: ExerciseNotesDisplayProps) {
               <View style={{ flex: 1, paddingRight: spacing[2] }}>
                 <View style={{ position: 'absolute', gap: spacing[2] }}>{renderText(maxNumberOfLines)}</View>
                 {/* Render this so it doesn't jump around when expanding - need to always reserve the full text space */}
-                <View style={{ visibility: 'hidden', opacity: 0, gap: spacing[2] }}>{renderText(undefined)}</View>
+                {/* `visibility` is web CSS, not a React Native style; opacity plus pointerEvents is how
+                    native hides something that must keep occupying its space. */}
+                <View pointerEvents="none" style={{ opacity: 0, gap: spacing[2] }}>
+                  {renderText(undefined)}
+                </View>
               </View>
             </View>
           </AccordionItem>

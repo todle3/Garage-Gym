@@ -22,7 +22,6 @@ jobs:
     permissions:
       contents: write # Upload APK to the GitHub release
     env:
-      EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY: ${{secrets.EXPO_REVENUECAT_GOOGLE_API_KEY}}
     steps:
       - uses: actions/checkout@v6
         with:

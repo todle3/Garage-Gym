@@ -29,9 +29,6 @@ jobs:
       APPSTORE_CONNECT_API_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
       APPSTORE_CONNECT_API_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
 
-      # App config
-      EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY: ${{ secrets.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY }}
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6

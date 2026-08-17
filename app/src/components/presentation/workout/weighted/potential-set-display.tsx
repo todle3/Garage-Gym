@@ -1,7 +1,7 @@
 import { PotentialSet } from '@/models/session-models';
 import { formatRepsTarget, Resistance, RepsTarget } from '@/models/blueprint-models';
 import { ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { Text, TextStyle, View } from 'react-native';
 import WeightFormat from '@/components/presentation/foundation/weight-format';
 import { font, rounding, spacing, useAppTheme } from '@/hooks/useAppTheme';
 import TouchableRipple from '@/components/presentation/foundation/touchable-ripple';
@@ -54,16 +54,23 @@ export function PotentialSetDisplay(props: PotentialSetDisplayProps) {
   const isFilled = repCountValue !== undefined;
   const showsWeight = props.resistance !== 'none';
 
+  /*
+   * Typed as a TextStyle, not a ViewStyle, because `userSelect` is a text style in React Native's types
+   * even though it is set here on the tile so it covers every label inside. TextStyle extends ViewStyle,
+   * so a named style still satisfies View - it is the object literal that draws an excess-property error.
+   * Native ignores the property (Text is not selectable unless asked); it earns its place in the web
+   * build, where dragging across a tile would select the rep count instead of reading as a tap.
+   */
+  const tileStyle: TextStyle = {
+    userSelect: 'none',
+    minWidth: size.minWidth,
+    maxWidth: size.maxWidth,
+    flexGrow: size.maxWidth === undefined ? undefined : 1,
+    flexBasis: size.maxWidth === undefined ? undefined : size.minWidth,
+  };
+
   return (
-    <View
-      style={{
-        userSelect: 'none',
-        minWidth: size.minWidth,
-        maxWidth: size.maxWidth,
-        flexGrow: size.maxWidth === undefined ? undefined : 1,
-        flexBasis: size.maxWidth === undefined ? undefined : size.minWidth,
-      }}
-    >
+    <View style={tileStyle}>
       <View
         style={{
           borderRadius: rounding.roundedRectangleRadius,

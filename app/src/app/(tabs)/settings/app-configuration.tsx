@@ -1,10 +1,8 @@
 import FullHeightScrollView from '@/components/layout/full-height-scroll-view';
 import Button from '@/components/presentation/foundation/button';
 import ListSwitch from '@/components/presentation/foundation/list-switch';
-import ThemeChooser from '@/components/presentation/foundation/editors/theme-chooser';
 import { RootState, useAppSelector } from '@/store';
 import {
-  setColorSchemeSeed,
   setKeepScreenAwakeDuringWorkout,
   setNotesExpandedByDefault,
   setShowBodyweight,
@@ -68,11 +66,10 @@ export default function AppConfiguration() {
           onValueChange={(value) => dispatch(setShowTips(value))}
         />
 
-        <ThemeChooser
-          seed={settings.colorSchemeSeed}
-          onUpdateTheme={(x) => dispatch(setColorSchemeSeed(x))}
-          trueBlack={settings.trueBlackDarkTheme}
-          setTrueBlack={(b) => dispatch(setTrueBlackDarkTheme(b))}
+        <ListSwitch
+          headline={t('settings.app_configuration.true_black_dark_theme.title')}
+          value={settings.trueBlackDarkTheme}
+          onValueChange={(value) => dispatch(setTrueBlackDarkTheme(value))}
         />
         <Button
           onPress={() => dispatch(setWelcomeWizardCompleted(false))}

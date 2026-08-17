@@ -1,11 +1,11 @@
 import { useAppSelector } from '@/store';
-import { Material3Scheme, useMaterial3Theme } from '@pchmn/expo-material3-theme';
-import React, { createContext, ReactNode, useContext, useEffect } from 'react';
-import { Platform, useColorScheme } from 'react-native';
-import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
-import { DarkTheme, ThemeProvider as NavigationThemeProvider, DefaultTheme } from 'expo-router';
+import { Material3Scheme } from '@pchmn/expo-material3-theme';
+import React, { createContext, ReactNode, useContext } from 'react';
+import { PaperProvider, MD3DarkTheme } from 'react-native-paper';
+import { DarkTheme, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import { MsIconSrc } from '@/components/presentation/foundation/ms-icon-source';
-import { argbFromHex, Blend, Hct, hexFromArgb } from '@material/material-color-utilities';
+import { accentColors, activityRampColors, garageGymScheme, neon } from '@/theme';
+import { paperFonts } from '@/theme/paper-fonts';
 
 export const rounding = {
   roundedRectangleRadius: 10,
@@ -151,69 +151,36 @@ interface AppThemeProviderProps {
 }
 
 export const AppThemeProvider: React.FC<AppThemeProviderProps> = ({ children }) => {
-  const colorSchemeSeed = useAppSelector((state) => state.settings.colorSchemeSeed);
   const trueBlack = useAppSelector((state) => state.settings.trueBlackDarkTheme);
 
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  // If the device is not compatible, it will return a theme based on the fallback source color (optional, default to #6750A4)
-  const sourceColor = colorSchemeSeed === 'default' ? undefined : colorSchemeSeed;
-  const { theme, updateTheme, resetTheme } = useMaterial3Theme({
-    fallbackSourceColor: '0x005500',
-    sourceColor,
-  });
-  let newTheme = theme;
-  if (trueBlack) {
-    newTheme = {
-      ...newTheme,
-      dark: { ...theme.dark, background: '#000000', surface: '#000000' },
-    };
-  }
-  useEffect(() => {
-    if (colorSchemeSeed === 'default') {
-      resetTheme();
-    } else {
-      updateTheme(colorSchemeSeed);
-    }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorSchemeSeed]);
-  const schemedTheme = colorScheme === 'dark' ? newTheme.dark : newTheme.light;
-
-  const paperTheme = isDark ? { ...MD3DarkTheme, colors: newTheme.dark } : { ...MD3LightTheme, colors: newTheme.light };
-  /* The seedColor is passed into the expo ui host to and is platform dependent
-   * On android, the seedColor is used to generate the tonal pallette, and therefore should be the same as the source color.
-   * If it is undefined, it will use the system's theme which matches our useMaterialTheme pallette in that case.
-   * On IOS we just want to use the primary color as that is what it represents.
+  /*
+   * Garage Gym has one scheme, so there is nothing to derive here and nothing to follow the system
+   * for - `app.json` pins the interface style to dark. The one thing left adjustable is how black the
+   * ground is: our default is a cool near-black, and true black is for OLED panels where the page
+   * should disappear into the bezel.
    */
-  const seedColor = Platform.select({
-    android: sourceColor,
-    ios: schemedTheme.primary,
-  });
+  const schemedTheme: Material3Scheme = trueBlack
+    ? { ...garageGymScheme, background: '#000000', surface: '#000000' }
+    : garageGymScheme;
+
+  const paperTheme = { ...MD3DarkTheme, colors: schemedTheme, fonts: paperFonts };
   const appTheme = {
     colors: {
       ...schemedTheme,
-      ...colorPair('orange', 'ffffa500', schemedTheme.primary, isDark),
-      ...colorPair('red', 'ffff0000', schemedTheme.primary, isDark),
-      ...colorPair('yellow', 'ffffff00', schemedTheme.primary, isDark),
-      ...colorPair('blue', 'ff0000aa', schemedTheme.primary, isDark),
-      ...colorPair('green', 'ff00aa00', schemedTheme.primary, isDark),
-      ...colorPair('purple', 'ff800080', schemedTheme.primary, isDark),
-      ...colorPair('pink', 'ffff69b4', schemedTheme.primary, isDark),
-      ...colorPair('teal', 'ff008080', schemedTheme.primary, isDark),
-      ...colorPair('cyan', 'ff00ffff', schemedTheme.primary, isDark),
-      ...colorPair('brown', 'ff8b4513', schemedTheme.primary, isDark),
-      ...colorPair('indigo', 'ff4b0082', schemedTheme.primary, isDark),
-      ...colorPair('lime', 'ffcddc39', schemedTheme.primary, isDark),
-      ...colorPair('amber', 'ffffc107', schemedTheme.primary, isDark),
-      ...activityRamp(schemedTheme.primary, isDark),
-      seedColor: seedColor,
+      ...accentColors,
+      ...activityRampColors,
+      /*
+       * Handed to expo-ui `Host`s. On Android it seeds Compose's tonal palette, on iOS it stands in
+       * for the accent colour - our fixed cyan serves both, where LiftLog needed a per-platform split
+       * because the seed was whatever colour the user had picked.
+       */
+      seedColor: neon.cyan,
     } satisfies AppThemeColors,
-    colorScheme: colorScheme === 'unspecified' ? 'light' : colorScheme,
-  };
+    colorScheme: 'dark',
+  } as const;
 
-  const baseNavigationThem = isDark ? DarkTheme : DefaultTheme;
   const navigationTheme = {
-    ...baseNavigationThem,
+    ...DarkTheme,
     colors: {
       background: paperTheme.colors.background,
       border: paperTheme.colors.outline,
@@ -237,49 +204,3 @@ export const AppThemeProvider: React.FC<AppThemeProviderProps> = ({ children }) 
     </AppThemeContext.Provider>
   );
 };
-
-/**
- * Tones for the activity ramp, walking from "barely there" to "full primary". Light and dark move in
- * opposite directions: on a light surface intensity reads as *darker*, on a dark surface as *brighter*.
- */
-const ACTIVITY_TONES_LIGHT = [92, 80, 62, 45];
-const ACTIVITY_TONES_DARK = [28, 40, 55, 72];
-
-/**
- * The graded fills the activity calendar shades its days with. Derived here, with the rest of the theme,
- * because each one costs an iterative CAM16 solve -- far too much to pay once per cell, per render.
- */
-function activityRamp(primary: string, isDark: boolean): ActivityRampColors {
-  const seed = Hct.fromInt(argbFromHex(primary));
-  const tones = isDark ? ACTIVITY_TONES_DARK : ACTIVITY_TONES_LIGHT;
-
-  return Object.assign(
-    {},
-    ...tones.map((tone, index) => ({
-      [`activityLevel${index + 1}`]: hexFromArgb(Hct.from(seed.hue, seed.chroma, tone).toInt()),
-      // Text stays legible against the fill: the same tone inversion `colorPair` uses.
-      [`onActivityLevel${index + 1}`]: hexFromArgb(Hct.from(seed.hue, seed.chroma, tone > 60 ? 10 : 100).toInt()),
-    })),
-  ) as ActivityRampColors;
-}
-
-function colorPair<T extends string>(name: T, hex: string, primary: string, isDark: boolean): ColorPair<T> {
-  // Step 1: Harmonize the input with the seed
-  const harmonized = Blend.harmonize(argbFromHex(hex), argbFromHex(primary));
-  const baseHct = Hct.fromInt(harmonized);
-
-  // Step 2: Adjust tone based on theme context
-  baseHct.tone = isDark ? 80 : 40; // Material-like defaults
-
-  // Step 3: Derive on-color from tone inversion
-  const onTone = baseHct.tone > 60 ? 10 : 100;
-  const onColor = Hct.from(baseHct.hue, baseHct.chroma, onTone);
-
-  // Step 4: Material-style return shape
-  const onName = `on${name.charAt(0).toUpperCase()}${name.slice(1)}` as const;
-
-  return {
-    [name]: hexFromArgb(baseHct.toInt()),
-    [onName]: hexFromArgb(onColor.toInt()),
-  } as ColorPair<T>;
-}

@@ -1,4 +1,5 @@
 import { ColorChoice, font, FontChoice, useAppTheme } from '@/hooks/useAppTheme';
+import { bodyFamilyForWeight } from '@/theme';
 import { Text, TextProps, TextStyle } from 'react-native';
 
 interface SurfaceTextProps extends TextProps {
@@ -14,7 +15,12 @@ export function SurfaceText(props: SurfaceTextProps) {
   return (
     <Text
       {...rest}
-      style={[{ color: colors[props.color ?? 'onSurface'], fontWeight: weight }, font[fontChoice], style]}
+      // A weight resolves to a font file rather than a `fontWeight`: see `bodyFamilyForWeight`.
+      style={[
+        { color: colors[props.color ?? 'onSurface'], fontFamily: bodyFamilyForWeight(weight) },
+        font[fontChoice],
+        style,
+      ]}
     />
   );
 }

@@ -59,31 +59,79 @@ nutrition."_ Garage Gym needs, from scratch:
 Read-only by design: no per-item macros, no "mark eaten", no running totals. That keeps the model
 small and honest about what it knows.
 
-## Theming approach
+## The design system
 
-The good news: theme derivation is already centralised in `app/src/hooks/useAppTheme.tsx`, which
-generates a Material 3 scheme from a seed colour and exposes named colour pairs
-(`red`/`onRed`, `cyan`/`onCyan`, …) that components consume. Most of the reskin is:
+Lives in **`app/src/theme/`**. Import tokens from `@/theme`; everything below is already wired into
+`useAppTheme`, so a component that reads `colors.*` from the hook is already on the Garage Gym palette.
 
-1. Replace dynamic Material 3 generation with a **fixed Garage Gym scheme** — near-black grounds,
-   neon cyan primary, neon green success/streak, magenta, amber, violet accents — while keeping the
-   same `AppThemeColors` shape so existing components keep compiling.
-2. Bundle the display font via `expo-font` and add uppercase, letterspaced display text styles to the
-   `font` scale.
-3. Add the Garage Gym chrome as foundation primitives: perspective grid background, corner-bracket
-   card frame, glow/outline buttons, accent-bar list rows.
-4. Sweep feature areas onto those primitives.
+- **`palette.ts`** — the raw ink: `ink` (near-black grounds), `line` (hairlines), `neon` (the accents),
+  `text` (type tones). No semantics, just values. Everything is a literal on purpose: LiftLog derived
+  colours from a seed through Material 3's tone solver, which is right when the user picks the seed but
+  turns a vivid cyan into a pastel.
+- **`scheme.ts`** — those values mapped onto Material 3's slot names, so react-native-paper and every
+  existing component keep working unchanged and simply come out neon-dark. Also `accentColors` (the
+  named pairs the calendar's day chips use) and `activityRampColors` (four graded fills).
+- **`typography.ts`** — `fontFamily` by role, the `displayText` variants, and `bodyFamilyForWeight`,
+  which turns a requested `fontWeight` into the file that actually provides it.
+- **`glow.ts`** — `boxGlow` / `textGlow` / `withAlpha`. Neon bloom is a zero-offset coloured shadow,
+  the opposite of `floating-shadow.ts`'s downward black one. One glowing thing per card.
+- **`paper-fonts.ts`** — the Paper typescale adapter. Deliberately *not* re-exported from `@/theme`:
+  it is the only module here that imports react-native-paper, and the unit-test environment stubs React
+  Native out, so keeping it separate is what lets the tokens be imported from a spec.
 
-Note the app has 11 `.android.tsx` platform-split variants and a react-native-paper → expo-ui
-migration in progress (see `AGENTS.md` and the `expo-ui-migration` skill). Native `Host`s take
-`colors.seedColor`, so the fixed scheme must set that too.
+Contrast is enforced by `scheme.spec.ts` rather than by eye: every `on*`/fill pair, every accent as a
+chip on a card, and the monotonic climb of the surface and activity ramps. Change a colour and the test
+tells you whether it is still legible.
+
+### There is one scheme, not two
+
+The design is dark, so `app.json` pins `userInterfaceStyle` to dark and `useAppTheme` always returns
+the same scheme. The only remaining appearance preference is **true black**, for OLED panels. The seed
+colour picker is gone (`theme-chooser.tsx`, `color-picker-dialog.tsx`, `color-sliders.tsx` deleted) —
+a fixed brand identity has nothing to pick. The `colorSchemeSeed` preference itself still exists in the
+settings registry and is simply unread; removing a persisted preference is migration work for later.
+
+### Fonts
+
+Seven static TTFs in `app/assets/fonts/`, embedded natively by the `expo-font` config plugin (so there
+is no runtime load and no flash of fallback text). **Orbitron** Bold/Black for display, **Chakra Petch**
+Light→Bold for body. Both are OFL; the licences sit beside them.
+
+Two rules when adding a weight:
+
+1. **The filename must equal the PostScript name.** iOS resolves an embedded font by PostScript name and
+   Android by filename; keeping them identical is what lets one string work on both. Verify with
+   fontTools before committing.
+2. **Ship a real file per weight, never `fontWeight`.** Asking the OS for a weight the family lacks gets
+   you a synthesised, smeared one. Orbitron only publishes a variable font upstream, so the Bold and
+   Black statics here were instanced from it with `fontTools.varLib.instancer`.
+
+### Primitives
+
+In `components/presentation/foundation/`:
+
+- **`GridBackground`** — the faint square grid plus the perspective floor. Sizes itself from its own
+  layout, so it works in a card or a sheet as well as a full page.
+- **`BracketFrame`** — the corner-bracket card. Square-cornered on purpose; a radius softens exactly
+  the thing that makes it recognisable.
+- **`DisplayText`** — Orbitron, uppercased, tracked, optionally glowing. The counterpart to
+  `SurfaceText`, which stays on the body face.
+
+### Still to sweep
+
+`SurfaceText` and Paper components now carry the right faces, but a bare react-native `<Text>` does not
+inherit a family — those call sites need moving onto `SurfaceText`/`DisplayText` as each feature area is
+reskinned. Light-mode branches in existing components are dead but harmless. The app has 11
+`.android.tsx` variants and a react-native-paper → expo-ui migration in progress (see `AGENTS.md` and
+the `expo-ui-migration` skill); native `Host`s read `colors.seedColor`, which the fixed scheme sets to
+brand cyan on both platforms.
 
 ## Roadmap
 
 Each phase is independently shippable and verifiable.
 
-1. **Design system** — fixed neon scheme, font, display type scale, grid background, corner-bracket
-   card, neon buttons. No feature changes.
+1. ~~**Design system**~~ — **done.** Fixed neon scheme, bundled fonts, display type scale, grid
+   background, corner-bracket card, glow helpers. See "The design system" above.
 2. **Cut what's going** — remove RevenueCat, CSV import, and plaintext export, including the pro-token
    plumbing threaded through the AI service and settings.
 3. **BYOK plumbing** — provider/key settings screen, secure-store service, key validation, model

@@ -2,12 +2,10 @@ import Button from '@/components/presentation/foundation/button';
 import { Pager } from '@/components/presentation/foundation/pager';
 import ListSwitch from '@/components/presentation/foundation/list-switch';
 import SelectPicker, { SelectPickerOption } from '@/components/presentation/foundation/select-picker';
-import ThemeChooser from '@/components/presentation/foundation/editors/theme-chooser';
 import { spacing, useAppTheme } from '@/hooks/useAppTheme';
 import { supportedLanguages } from '@/services/tolgee';
 import { useAppSelector } from '@/store';
 import {
-  setColorSchemeSeed,
   setFirstDayOfWeek,
   setLastSeenWhatsNewId,
   setPreferredLanguage,
@@ -173,11 +171,10 @@ export function WelcomeWizard() {
             />
           )}
         />
-        <ThemeChooser
-          seed={settings.colorSchemeSeed}
-          onUpdateTheme={(x) => dispatch(setColorSchemeSeed(x))}
-          setTrueBlack={(b) => dispatch(setTrueBlackDarkTheme(b))}
-          trueBlack={settings.trueBlackDarkTheme}
+        <ListSwitch
+          headline={t('settings.app_configuration.true_black_dark_theme.title')}
+          value={settings.trueBlackDarkTheme}
+          onValueChange={(value) => dispatch(setTrueBlackDarkTheme(value))}
         />
       </View>
     </View>

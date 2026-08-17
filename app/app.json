@@ -3,16 +3,30 @@
     "name": "LiftLog",
     "slug": "liftlog",
     "version": "1.0.0",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "web": {
       "bundler": "metro",
       "output": "single"
     },
     "icon": "./assets/icon.png",
-    "backgroundColor": "#fcfdf6",
-    "primaryColor": "#046F03",
+    "backgroundColor": "#04070B",
+    "primaryColor": "#22E0F5",
     "plugins": [
       "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/ChakraPetch-Light.ttf",
+            "./assets/fonts/ChakraPetch-Regular.ttf",
+            "./assets/fonts/ChakraPetch-Medium.ttf",
+            "./assets/fonts/ChakraPetch-SemiBold.ttf",
+            "./assets/fonts/ChakraPetch-Bold.ttf",
+            "./assets/fonts/Orbitron-Bold.ttf",
+            "./assets/fonts/Orbitron-Black.ttf"
+          ]
+        }
+      ],
       [
         "expo-dev-client",
         {
@@ -45,7 +59,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#fcfdf6",
+          "backgroundColor": "#04070B",
           "image": "./assets/splash.png",
           "resizeMode": "contain"
         }
@@ -102,7 +116,7 @@
         }
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#dfedda",
+        "backgroundColor": "#04070B",
         "foregroundImage": "./assets/icon_foreground.png",
         "monochromeImage": "./assets/icon_monochrome.png"
       }

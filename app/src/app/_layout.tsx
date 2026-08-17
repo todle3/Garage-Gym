@@ -37,7 +37,8 @@ export default function RootLayout() {
             <AppThemeProvider>
               <AppStateProvider>
                 <SnackbarProvider>
-                  {Platform.OS === 'android' && <StatusBar style="auto" />}
+                  {/* Light glyphs, not `auto`: the ground is always near-black now. */}
+                  {Platform.OS === 'android' && <StatusBar style="light" />}
                   <PlanImportGate />
                   <Layout />
                 </SnackbarProvider>
